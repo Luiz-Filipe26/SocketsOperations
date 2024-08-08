@@ -1,9 +1,10 @@
-package socketsOperations.clients;
+package socketsOperations.communicators.clients;
 
 import java.io.*;
 import java.util.function.*;
 
 import socketsOperations.utils.CommunicationConstants;
+import socketsOperations.utils.ConsoleOutput;
 
 public class MessageSender implements BiConsumer<BufferedReader, PrintWriter> {
 	
@@ -14,12 +15,6 @@ public class MessageSender implements BiConsumer<BufferedReader, PrintWriter> {
 	private boolean stop;
 	private boolean listAllMessages;
 	
-	public Consumer<String> output;
-    
-    public MessageSender(Consumer<String> output) {
-        this.output = output;
-    }
-
 	public void sendMessage(String message) {
 		this.message = message;
 		finishWaiting();
@@ -69,38 +64,38 @@ public class MessageSender implements BiConsumer<BufferedReader, PrintWriter> {
 				}
 			}
 		} catch (Exception e) {
-			output.accept("Erro ao ler a requisição: " + e.getMessage());
+			ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
 		}
 	}
 	
     private void handleRequestSuccess(String requestContent) {
-    	output.accept("Request success from server: " + requestContent);
+    	ConsoleOutput.println("Request success from server: " + requestContent);
 	}
 
 	private void handleRequestError(String requestContent) {
-    	output.accept("Request error from server: " + requestContent);
+    	ConsoleOutput.println("Request error from server: " + requestContent);
 	}
 
 	private void receiveList(BufferedReader socketReader, String requestContent) {
-		output.accept(requestContent);
+		ConsoleOutput.println(requestContent);
 		String line;
 		try {
 			while ((line = socketReader.readLine()) != null && !line.isEmpty()) {
 				if(line.contains("|")) {
 					String requestType = getRequestType(line);
 					requestContent = getRequestContent(line);
-					output.accept(requestContent);
+					ConsoleOutput.println(requestContent);
 
 					if(requestType.equals(CommunicationConstants.LISTEND)) {
 						break;
 					}
 				}
 				else {
-					output.accept(line);
+					ConsoleOutput.println(line);
 				}
 			} 
 		} catch (Exception e) {
-			output.accept("Erro ao ler a requisição: " + e.getMessage());
+			ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
 		}
 	}
 
@@ -135,7 +130,7 @@ public class MessageSender implements BiConsumer<BufferedReader, PrintWriter> {
 			try {
 				lock.wait();
 			} catch (InterruptedException e) {
-				output.accept("Erro: " + e.getMessage());
+				ConsoleOutput.println("Erro: " + e.getMessage());
 			}
 		}
 	}

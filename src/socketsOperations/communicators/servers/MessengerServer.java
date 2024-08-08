@@ -1,23 +1,19 @@
-package socketsOperations.servers;
+package socketsOperations.communicators.servers;
 
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
 import socketsOperations.utils.CommunicationConstants;
+import socketsOperations.utils.ConsoleOutput;
 
 public class MessengerServer implements BiConsumer<BufferedReader, PrintWriter> {
 
-    private BufferedReader socketReader;
+    @SuppressWarnings("unused")
+	private BufferedReader socketReader;
     private PrintWriter socketOutput;
 
     private final List<String> messages = Collections.synchronizedList(new ArrayList<>());
-    
-    public Consumer<String> output;
-    
-    public MessengerServer(Consumer<String> output) {
-        this.output = output;
-    }
     
     @Override
     public void accept(BufferedReader socketReader, PrintWriter socketOutput) {
@@ -38,12 +34,12 @@ public class MessengerServer implements BiConsumer<BufferedReader, PrintWriter> 
                 }
             }
         } catch (Exception e) {
-            output.accept("Erro ao ler a requisição: " + e.getMessage());
+            ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
         }
     }
 
     private void handleRequestError(String requestContent) {
-    	output.accept("Request error from client: " + requestContent);
+    	ConsoleOutput.println("Request error from client: " + requestContent);
     }
 
 	private String getRequestType(String line) {
@@ -69,7 +65,7 @@ public class MessengerServer implements BiConsumer<BufferedReader, PrintWriter> 
     private void receiveMessage(String message) {
         messages.add(message);
         //socketOutput.println("Mensagem recebida.");
-        output.accept("Mensagem recebida: " + message);
+        ConsoleOutput.println("Mensagem recebida: " + message);
     }
 
     private void sendAllMessages() {

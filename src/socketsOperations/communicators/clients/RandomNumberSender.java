@@ -1,8 +1,10 @@
-package socketsOperations.clients;
+package socketsOperations.communicators.clients;
 
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
+
+import socketsOperations.utils.ConsoleOutput;
 
 public class RandomNumberSender implements BiConsumer<BufferedReader, PrintWriter> {
 
@@ -19,7 +21,7 @@ public class RandomNumberSender implements BiConsumer<BufferedReader, PrintWrite
             int randomNumber = random.nextInt(100);
             String message = "oi from " + randomNumber;
             out.println(message);
-            System.out.println("Enviado: " + message);
+            ConsoleOutput.println("Enviado: " + message);
         }
     }
 }

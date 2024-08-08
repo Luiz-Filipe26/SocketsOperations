@@ -5,6 +5,8 @@ import java.io.*;
 import java.net.*;
 import java.util.function.*;
 
+import socketsOperations.utils.ConsoleOutput;
+
 public class ClientExecutor {
 
     public static void runClient(String host, int port, BiConsumer<BufferedReader, PrintWriter> messageSender) {
@@ -17,7 +19,7 @@ public class ClientExecutor {
                 messageSender.accept(in, out);
 
             } catch (IOException e) {
-                System.err.println("Erro ao conectar ao servidor: " + e.getMessage());
+                ConsoleOutput.println("Erro ao conectar ao servidor: " + e.getMessage());
             }
         }).start();
     }

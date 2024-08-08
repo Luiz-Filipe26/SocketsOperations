@@ -3,8 +3,10 @@ package socketsOperations.clis;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import socketsOperations.communicators.servers.MessengerServer;
 import socketsOperations.executors.ServerExecutor;
-import socketsOperations.servers.MessengerServer;
+import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.KeyboardHandler;
 
 public class ServerMessengerCLI {
 
@@ -15,25 +17,25 @@ public class ServerMessengerCLI {
     private static final AtomicBoolean serverHasToWaitToPrint = new AtomicBoolean(false);
 
     public static void main(String[] args) {
-        Scanner keyboardInput = new Scanner(System.in);
+        KeyboardHandler keyboardHandler = KeyboardHandler.getInstance();
+        ConsoleOutput.setConsole(ServerMessengerCLI::printMessage);
         boolean running = true;
 
         while (running) {
             printMenu();
 
-            int choice = keyboardInput.nextInt();
-            keyboardInput.nextLine(); //clean buffer
+            int choice = keyboardHandler.getIntInput(input -> true, "Digite uma opcao: ", "Opcao invalida. Tente novamente.");
             
             System.out.println("=".repeat(30));
             switch (choice) {
                 case 1:
-                    createServer(keyboardInput);
+                    createServer();
                     break;
                 case 2:
                     listServers();
                     break;
                 case 3:
-                    stopServer(keyboardInput);
+                    stopServer();
                     break;
                 case 4:
                     stopAllServers();
@@ -44,7 +46,11 @@ public class ServerMessengerCLI {
             }
         }
 
-        keyboardInput.close();
+        keyboardHandler.closeKeyboardEntry();
+    }
+    
+    public static void printText(String text) {
+    	System.out.println(text);
     }
 
     private static void printMenu() {
@@ -55,7 +61,6 @@ public class ServerMessengerCLI {
         System.out.println("2. Listar servidores");
         System.out.println("3. Parar servidor");
         System.out.println("4. Sair");
-        System.out.println("Escolha uma opcao");
         flushOutput();
     }
 
@@ -89,13 +94,14 @@ public class ServerMessengerCLI {
         serverHasToWaitToPrint.set(false);
     }
 
-    private static void createServer(Scanner keyboardInput) {
+    private static void createServer() {
         lockOutput();
+        KeyboardHandler keyboardHandler = KeyboardHandler.getInstance();
         System.out.print("Digite a porta do novo servidor: ");
-        int port = keyboardInput.nextInt();
-        keyboardInput.nextLine();
 
-        var messengerServer = new MessengerServer(ServerMessengerCLI::printMessage);
+        int port = keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta inválida!\n");
+
+        var messengerServer = new MessengerServer();
         ServerExecutor serverRunner = new ServerExecutor(port, messengerServer);
 
         serverCounter++;
@@ -118,11 +124,10 @@ public class ServerMessengerCLI {
         flushOutput();
     }
 
-    private static void stopServer(Scanner keyboardInput) {
+    private static void stopServer() {
         lockOutput();
-        System.out.print("Digite o ID do servidor para parar: ");
-        int serverId = keyboardInput.nextInt();
-        keyboardInput.nextLine(); //clean buffer
+        KeyboardHandler keyboardHandler = KeyboardHandler.getInstance();
+        int serverId = keyboardHandler.getIntInput(input -> true, "Digite o ID do servidor para parar: ", "[!] Seleção inválida.");
 
         ServerExecutor serverRunner = servers.remove(serverId);
         if (serverRunner != null) {
