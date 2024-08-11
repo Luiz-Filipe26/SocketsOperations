@@ -7,5 +7,6 @@ public class CommunicationConstants {
 		MESSAGE = "msg",
 		ERROR = "nok",
 		SUCCESS = "ok",
-		LISTEND = "listend";
+		LISTEND = "listend",
+		BADREQUEST = "badreq";
 }

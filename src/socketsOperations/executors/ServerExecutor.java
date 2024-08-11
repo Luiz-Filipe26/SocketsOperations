@@ -1,24 +1,20 @@
-
 package socketsOperations.executors;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.function.BiConsumer;
+import java.io.*;
+import java.net.*;
+import java.util.function.*;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestHandler;
 
 public class ServerExecutor {
 
     private Thread serverThread;
     private final int port;
-    private final BiConsumer<BufferedReader, PrintWriter> requestProcessor;
+    private final Consumer<RequestHandler> requestProcessor;
 
-    public ServerExecutor(int port, BiConsumer<BufferedReader, PrintWriter> requestProcessor) {
+    public ServerExecutor(int port, Consumer<RequestHandler> requestProcessor) {
         this.port = port;
         this.requestProcessor = requestProcessor;
     }
@@ -69,9 +65,10 @@ public class ServerExecutor {
     private void processNewServer(Socket clientSocket) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-
-            requestProcessor.accept(in, out);
-            out.println(CommunicationConstants.SUCCESS + "| Servidor criado com sucesso!");
+        	
+        	var requestHandler = new RequestHandler(in, out);
+            requestProcessor.accept(requestHandler);
+            requestHandler.sendRequest(CommunicationConstants.SUCCESS, "Servidor criado com sucesso!");
             
         } catch (IOException e) {
             ConsoleOutput.println("Erro ao processar a conexão do cliente: " + e.getMessage());

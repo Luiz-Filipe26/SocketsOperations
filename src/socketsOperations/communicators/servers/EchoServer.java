@@ -1,22 +1,22 @@
 package socketsOperations.communicators.servers;
 
-import java.io.*;
 import java.util.function.*;
 
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestHandler;
+import socketsOperations.utils.RequestHandler.RequestData;
 
-public class EchoServer implements BiConsumer<BufferedReader, PrintWriter> {
+public class EchoServer implements Consumer<RequestHandler> {
 
-    @Override
-    public void accept(BufferedReader socketReader, PrintWriter socketOutput) {
-        try {
-            String line;
-            while ((line = socketReader.readLine()) != null && !line.isEmpty()) {
-                ConsoleOutput.println("Recebido: " + line);
-            }
-        } catch (Exception e) {
-        	ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
-        }
-    }
-
+	@Override
+	public void accept(RequestHandler requestHandler) {
+		while(true) {
+			try {
+				RequestData requestData = requestHandler.receiveRequest();
+				ConsoleOutput.println("Recebido: " + requestData.requestContent());
+			} catch (Exception e) {
+				ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
+			}
+		}
+	}
 }

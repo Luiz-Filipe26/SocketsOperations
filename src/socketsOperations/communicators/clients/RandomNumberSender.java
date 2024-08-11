@@ -1,12 +1,13 @@
 package socketsOperations.communicators.clients;
 
-import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
+import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestHandler;
 
-public class RandomNumberSender implements BiConsumer<BufferedReader, PrintWriter> {
+public class RandomNumberSender implements Consumer<RequestHandler> {
 
     private final int numberOfRandomNumbers;
 
@@ -15,12 +16,12 @@ public class RandomNumberSender implements BiConsumer<BufferedReader, PrintWrite
     }
 
     @Override
-    public void accept(BufferedReader in, PrintWriter out) {
-        Random random = new Random();
+    public void accept(RequestHandler requestHandler) {
+        Random random = new java.util.Random();
         for (int i = 0; i < numberOfRandomNumbers; i++) {
             int randomNumber = random.nextInt(100);
             String message = "oi from " + randomNumber;
-            out.println(message);
+            requestHandler.sendRequest(CommunicationConstants.MESSAGE, message);
             ConsoleOutput.println("Enviado: " + message);
         }
     }

@@ -27,7 +27,7 @@ public class ClienteMessengerCLI {
         
         while(!exit) {
             printMenu();
-            option = keyboardHandler.getIntInput(input -> input >= 1 && input <= 5, "Digite a opcao:\n", "[!] Opcao invalida!\n");
+            option = keyboardHandler.getIntInput(input -> input >= 1 && input <= 5, "Digite a opcao: \n", "[!] Opcao invalida!\n");
             switch(option) {
             	case 1 -> ip = keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP inválido\n");
             	case 2 -> port = keyboardHandler.getIntInput(input -> input>=1 && input<=5, "Por favor, digite a porta: ", "[!] Porta inválida!\n");

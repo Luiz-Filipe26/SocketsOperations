@@ -5,11 +5,12 @@ import java.util.function.*;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestHandler;
+import socketsOperations.utils.RequestHandler.RequestData;
 
-public class MessageSender implements BiConsumer<BufferedReader, PrintWriter> {
+public class MessageSender implements Consumer<RequestHandler> {
 	
-    private BufferedReader socketReader;
-    private PrintWriter socketOutput;
+	private RequestHandler requestHandler;
 	private String message;
 	private final Object lock = new Object();
 	private boolean stop;
@@ -30,93 +31,65 @@ public class MessageSender implements BiConsumer<BufferedReader, PrintWriter> {
 	}
 
 	@Override
-	public void accept(BufferedReader socketReader, PrintWriter socketOutput) {
-		this.socketReader = socketReader;
-		this.socketOutput = socketOutput;
+	public void accept(RequestHandler requestHandler) {
+		this.requestHandler = requestHandler;
 		
-		new Thread(this::handleServerMessages).start();
+//		new Thread(this::handleServerMessages).start();
 		
 		while (!stop) {
 			if (message != null && !message.isBlank()) {
-				socketOutput.println("msg| " +message);
+				requestHandler.sendRequest(CommunicationConstants.MESSAGE, message);
 				message = "";
 			}
 			if (listAllMessages) {
 				listAllMessages = false;
-				socketOutput.println(CommunicationConstants.LISTREQUEST + "| Please, list messages");
+				try {
+					RequestData answer = requestHandler.sendRequestAndWaitAnswer(CommunicationConstants.LISTREQUEST, "Please, list messages");
+					switch(answer.requestType()) {
+					case CommunicationConstants.ERROR -> ConsoleOutput.println("Erro: " + answer.requestContent());
+					case CommunicationConstants.SUCCESS -> ConsoleOutput.println(answer.requestContent());
+					case CommunicationConstants.BADREQUEST -> ConsoleOutput.println("Problema na request: " + answer.requestContent());
+					default -> ConsoleOutput.println("Resposta desconhecida: " + answer.requestContent());
+					};
+				} catch (IOException e) {
+					ConsoleOutput.println("Erro ao receber lista de mensagem" + e.getMessage());
+				}
 			}
 			waitRequests();
 		}
 	}
 	
+	//Don't makes for client-server application
+	@SuppressWarnings("unused")
 	private void handleServerMessages() {
-		try {
-			String line;
-			while ((line = socketReader.readLine()) != null && !line.isEmpty()) {
-				String requestType = getRequestType(line);
-				String requestContent = getRequestContent(line);
-
-				switch (requestType) {
-					case CommunicationConstants.LISTANSWER -> receiveList(socketReader, requestContent);
-					case CommunicationConstants.ERROR -> handleRequestError(requestContent);
-					case CommunicationConstants.SUCCESS -> handleRequestSuccess(requestContent);
-					default -> unknownRequest(requestType);
-				}
+		while(true) {
+			RequestData requestData;
+			
+			try {
+				requestData = requestHandler.receiveRequest();
+			} catch (IOException e) {
+				ConsoleOutput.println("Erro ao receber request do servidor: " + e.getMessage());
+				continue;
 			}
-		} catch (Exception e) {
-			ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
+
+			switch (requestData.requestType()) {
+				case CommunicationConstants.ERROR -> handleRequestError(requestData.requestContent());
+				case CommunicationConstants.SUCCESS -> handleRequestSuccess(requestData.requestContent());
+				default -> unknownRequest(requestData.requestContent());
+			}
 		}
 	}
 	
     private void handleRequestSuccess(String requestContent) {
-    	ConsoleOutput.println("Request success from server: " + requestContent);
+    	ConsoleOutput.println("Erro ao receber request do servidor: " + requestContent);
 	}
 
 	private void handleRequestError(String requestContent) {
-    	ConsoleOutput.println("Request error from server: " + requestContent);
+    	ConsoleOutput.println("Erro ao receber request do servidor: " + requestContent);
 	}
-
-	private void receiveList(BufferedReader socketReader, String requestContent) {
-		ConsoleOutput.println(requestContent);
-		String line;
-		try {
-			while ((line = socketReader.readLine()) != null && !line.isEmpty()) {
-				if(line.contains("|")) {
-					String requestType = getRequestType(line);
-					requestContent = getRequestContent(line);
-					ConsoleOutput.println(requestContent);
-
-					if(requestType.equals(CommunicationConstants.LISTEND)) {
-						break;
-					}
-				}
-				else {
-					ConsoleOutput.println(line);
-				}
-			} 
-		} catch (Exception e) {
-			ConsoleOutput.println("Erro ao ler a requisição: " + e.getMessage());
-		}
-	}
-
-	private String getRequestType(String line) {
-        int indexOfTypeSeparator = line.indexOf('|');
-        if (indexOfTypeSeparator != -1) {
-            return line.substring(0, indexOfTypeSeparator);
-        }
-        return "";
-    }
-
-    private String getRequestContent(String line) {
-        int indexOfTypeSeparator = line.indexOf('|');
-        if (indexOfTypeSeparator != -1 && indexOfTypeSeparator + 1 < line.length()) {
-            return line.substring(indexOfTypeSeparator + 1);
-        }
-        return "";
-    }
 
     private void unknownRequest(String requestType) {
-    	socketOutput.println(CommunicationConstants.ERROR + "| Unknown request type: " + requestType);
+    	requestHandler.sendRequest(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
     }
 
 	private void finishWaiting() {
