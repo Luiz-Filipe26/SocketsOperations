@@ -97,7 +97,6 @@ public class ServerMessengerCLI {
     private static void createServer() {
         lockOutput();
         KeyboardHandler keyboardHandler = KeyboardHandler.getInstance();
-        System.out.print("Digite a porta do novo servidor: ");
 
         int port = keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta inválida!\n");
 
