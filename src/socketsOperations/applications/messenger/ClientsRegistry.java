@@ -1,7 +1,9 @@
 
-package socketsOperations.utils;
+package socketsOperations.applications.messenger;
 
 import java.util.*;
+
+import socketsOperations.utils.RequestHandler;
 
 public class ClientsRegistry {
     private static HashMap<String, RequestHandler> clients = new HashMap<>();

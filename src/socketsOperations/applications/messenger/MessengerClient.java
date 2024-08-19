@@ -41,6 +41,7 @@ public class MessengerClient implements Consumer<RequestHandler> {
         this.requestHandler = requestHandler;
 
         new Thread(this::handleServerMessages).start();
+        
         while (!stop) {
             if (message != null && !message.isBlank()) {
                 requestHandler.sendRequest(CommunicationConstants.MESSAGE, recipient + ":" + message);
@@ -58,6 +59,8 @@ public class MessengerClient implements Consumer<RequestHandler> {
                             ConsoleOutput.println(answer.requestContent());
                         case CommunicationConstants.BADREQUEST ->
                             ConsoleOutput.println("Problema na request: " + answer.requestContent());
+                        case CommunicationConstants.LISTANSWER ->
+                        	ConsoleOutput.println("Lista de mensagens:\n" + answer.requestContent());
                         default ->
                             ConsoleOutput.println("Resposta desconhecida: " + answer.requestContent());
                     };

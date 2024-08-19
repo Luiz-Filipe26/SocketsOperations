@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.*;
 
-import socketsOperations.utils.ClientsRegistry;
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.RequestHandler;

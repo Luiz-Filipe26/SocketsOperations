@@ -26,18 +26,25 @@ public class RequestHandler {
     public RequestData sendRequestAndWaitAnswer(String requestType, String requestContent) throws IOException {
         waitingAnswer = true;
         sendRequest(requestType, requestContent);
-        return receiveAnswer(requestType);
+        return receiveAnswer();
     }
 
-    public RequestData receiveAnswer(String requestType) throws IOException {
+    public RequestData receiveAnswer() throws IOException {
         waitingAnswer = true;
         waitReceiveAnswer();
+        
+        String answer = currentSocketLine;
+        currentSocketLine = null;
 
-        if (currentSocketLine == null) {
+        if (answer == null) {
             throw new IOException("Conexão fechada inesperadamente pelo servidor.");
         }
+        
+        String[] responseParts = answer.split("\\| ", 2);
+        String requestType = responseParts[0];
+        String requestContent = responseParts.length > 1 ? responseParts[1] : "";
 
-        return handleResponseByType(requestType, currentSocketLine);
+        return handleResponseByType(requestType, requestContent);
     }
 
     private void waitReceiveAnswer() {
@@ -49,6 +56,14 @@ public class RequestHandler {
             }
         }
     }
+    
+    private void waitConsumeLine() {
+    	while(currentSocketLine != null) {
+	      	synchronized (waitingAnswerLock) {
+	    		waitingAnswerLock.notifyAll();
+			}
+    	}
+    }
 
     public RequestData receiveRequest() throws IOException {
 
@@ -58,13 +73,11 @@ public class RequestHandler {
             try {
                 currentSocketLine = socketReader.readLine();
                 if(waitingAnswer) {
-                	synchronized (waitingAnswerLock) {
-                		waitingAnswerLock.notifyAll();
-					}
+                	waitConsumeLine();
                 	continue;
                 }
                 
-                ConsoleOutput.println("A resposta do runAsync:" + currentSocketLine);
+                ConsoleOutput.println("A resposta do receiveRequest sem ser answer:" + currentSocketLine);
                 if (currentSocketLine == null) {
                     throw new IOException("Conexão fechada inesperadamente pelo servidor.");
                 }
@@ -88,37 +101,37 @@ public class RequestHandler {
 
     private RequestData handleResponseByType(String requestType, String initialResponse) throws IOException {
         String answer;
-        String resultType;
-        
+
         ConsoleOutput.println(requestType + "---" + initialResponse);
 
         try {
             answer = switch (requestType) {
-                case CommunicationConstants.LISTREQUEST ->
-                    handleListRequestResponse(initialResponse);
-                default ->
-                    handleDefaultResponse(initialResponse);
+                case CommunicationConstants.LISTANSWER -> handleListRequestResponse(initialResponse);
+                default -> handleDefaultResponse(initialResponse);
             };
-            resultType = "SUCCESS";
         } catch (IOException e) {
             answer = e.getMessage();
-            resultType = "ERROR";
+            requestType = CommunicationConstants.ERROR;
         }
 
         waitingAnswer = false;
-        synchronized (waitingAnswerLock) {
-            waitingAnswerLock.notifyAll();
-        }
 
-        return new RequestData(resultType, answer);
+        return new RequestData(requestType, answer);
     }
-
+    
     private String handleListRequestResponse(String initialResponse) throws IOException {
         StringBuilder listResponse = new StringBuilder(initialResponse).append("\n");
 
         String response;
-        while (!(response = socketReader.readLine()).startsWith(CommunicationConstants.LISTEND + "| ")) {
+        
+        while (true) {
+            waitReceiveAnswer();
+            response = currentSocketLine;
+            currentSocketLine = null;
             listResponse.append(response).append("\n");
+            if(response.startsWith(CommunicationConstants.LISTEND + "| ")) {
+            	break;
+            }
         }
         return listResponse.toString();
     }
