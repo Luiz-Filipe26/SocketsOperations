@@ -1,4 +1,4 @@
-package socketsOperations.communicators.clients;
+package socketsOperations.applications.messenger;
 
 import java.io.*;
 import java.util.function.*;
@@ -8,7 +8,7 @@ import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.RequestHandler;
 import socketsOperations.utils.RequestHandler.RequestData;
 
-public class MessageSender implements Consumer<RequestHandler> {
+public class MessengerClient implements Consumer<RequestHandler> {
 
     private RequestHandler requestHandler;
     private String message;

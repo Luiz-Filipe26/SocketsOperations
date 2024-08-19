@@ -1,8 +1,8 @@
-package socketsOperations.clis;
+package socketsOperations.applications.messenger;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import socketsOperations.communicators.clients.MessageSender;
+
 import socketsOperations.executors.ClientExecutor;
 import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.KeyboardHandler;
@@ -21,11 +21,11 @@ public class ClienteMessengerCLI {
         KeyboardHandler keyboardHandler = KeyboardHandler.getInstance();
         ConsoleOutput.setConsole(ClienteMessengerCLI::printServerOutput);
 
-        MessageSender client = new MessageSender();    
+        MessengerClient client = new MessengerClient();    
         
-        name = keyboardHandler.getInput(input -> !input.isBlank(), "Por favor, digite o nome: ", "[!] Nome inválido!\n");
-        ip = keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP inválido\n");
-        port = keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta inválida!\n");
+        name = keyboardHandler.getInput(input -> !input.isBlank(), "Por favor, digite o nome: ", "[!] Nome invalido!\n");
+        ip = "localhost";//keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP invalido\n");
+        port = 50;//keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta invalida!\n");
         
         ClientExecutor.runClient(ip, port, client);      
         try {
@@ -40,11 +40,11 @@ public class ClienteMessengerCLI {
             printMenu();
             option = keyboardHandler.getIntInput(input -> input >= 1 && input <= 5, "Digite a opcao: \n", "[!] Opcao invalida!\n");
             switch(option) {
-            	case 1 -> ip = keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP inválido\n");
-            	case 2 -> port = keyboardHandler.getIntInput(input -> input>=1 && input<=5, "Por favor, digite a porta: ", "[!] Porta inválida!\n");
+            	case 1 -> ip = keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP invalido\n");
+            	case 2 -> port = keyboardHandler.getIntInput(input -> input>=0 && input<=65535, "Por favor, digite a porta: ", "[!] Porta invalida!\n");
             	case 3 -> {
-                        String recipient = keyboardHandler.getInput(input -> !input.isBlank(), "Digite o desintario: ", "[!!!] Destinatário inválido!\n");
-            		String message = keyboardHandler.getInput(input -> !input.isBlank(), "Digite a mensagem: ", "[!!!] Mensagem inválida!\n");
+                    String recipient = keyboardHandler.getInput(input -> !input.isBlank(), "Digite o destinatario: ", "[!!!] Destinatario invalido!\n");
+            		String message = keyboardHandler.getInput(input -> !input.isBlank(), "Digite a mensagem: ", "[!!!] Mensagem invalida!\n");
             		client.sendMessage(recipient, message);
             	}
             	case 4 -> client.askForAllMessages();

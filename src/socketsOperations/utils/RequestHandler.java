@@ -1,15 +1,14 @@
 package socketsOperations.utils;
 
 import java.io.*;
-import java.util.concurrent.*;
 
 public class RequestHandler {
 
     private final BufferedReader socketReader;
     private final PrintWriter socketWriter;
-    private CompletableFuture<RequestData> currentReadTask;
     private volatile boolean waitingAnswer = false;
     private final Object waitingAnswerLock = new Object();
+    private String currentSocketLine;
 
     public record RequestData(String requestType, String requestContent) {
 
@@ -26,28 +25,22 @@ public class RequestHandler {
 
     public RequestData sendRequestAndWaitAnswer(String requestType, String requestContent) throws IOException {
         waitingAnswer = true;
-        if (currentReadTask != null) {
-            currentReadTask.cancel(true);
-        }
         sendRequest(requestType, requestContent);
         return receiveAnswer(requestType);
     }
 
     public RequestData receiveAnswer(String requestType) throws IOException {
         waitingAnswer = true;
-        if (currentReadTask != null) {
-            currentReadTask.cancel(true);
-        }
-        String response = socketReader.readLine();
+        waitReceiveAnswer();
 
-        if (response == null) {
+        if (currentSocketLine == null) {
             throw new IOException("Conexão fechada inesperadamente pelo servidor.");
         }
 
-        return handleResponseByType(requestType, response);
+        return handleResponseByType(requestType, currentSocketLine);
     }
 
-    private void waitAnswer() {
+    private void waitReceiveAnswer() {
         synchronized (waitingAnswerLock) {
             try {
                 waitingAnswerLock.wait();
@@ -57,39 +50,35 @@ public class RequestHandler {
         }
     }
 
-    //  Don't use in a client-server architecture on the client-side: the client should only receive answers.
     public RequestData receiveRequest() throws IOException {
 
         RequestData requestData = null;
 
         while (requestData == null) {
-            if (waitingAnswer) {
-                waitAnswer();
-            }
-
-            currentReadTask = new CompletableFuture<>();
-            CompletableFuture.runAsync(() -> {
-                try {
-                    String response = socketReader.readLine();
-                    if (response == null) {
-                        throw new IOException("Conexão fechada inesperadamente pelo servidor.");
-                    }
-
-                    String[] responseParts = response.split("\\| ", 2);
-                    String requestType = responseParts[0];
-                    String requestContent = responseParts.length > 1 ? responseParts[1] : "";
-
-                    currentReadTask.complete(new RequestData(requestType, requestContent));
-                } catch (IOException e) {
-                    currentReadTask.completeExceptionally(e);
-                }
-            });
-
             try {
-                requestData = currentReadTask.get();
-            } catch (Exception e) {
+                currentSocketLine = socketReader.readLine();
+                if(waitingAnswer) {
+                	synchronized (waitingAnswerLock) {
+                		waitingAnswerLock.notifyAll();
+					}
+                	continue;
+                }
+                
+                ConsoleOutput.println("A resposta do runAsync:" + currentSocketLine);
+                if (currentSocketLine == null) {
+                    throw new IOException("Conexão fechada inesperadamente pelo servidor.");
+                }
+
+                String[] responseParts = currentSocketLine.split("\\| ", 2);
+                String requestType = responseParts[0];
+                String requestContent = responseParts.length > 1 ? responseParts[1] : "";
+
+                requestData = new RequestData(requestType, requestContent);
+            } catch (IOException e) {
                 if (!waitingAnswer) {
-                    throw new IOException("Erro ao obter a solicitação", e);
+                    throw new IOException("Erro ao ler o socket: ", e);
+                } else {
+                	ConsoleOutput.println("Erro ao ler o scoket: " + e);
                 }
             }
         }
@@ -100,6 +89,8 @@ public class RequestHandler {
     private RequestData handleResponseByType(String requestType, String initialResponse) throws IOException {
         String answer;
         String resultType;
+        
+        ConsoleOutput.println(requestType + "---" + initialResponse);
 
         try {
             answer = switch (requestType) {

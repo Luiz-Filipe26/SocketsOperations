@@ -1,9 +1,8 @@
-package socketsOperations.clis;
+package socketsOperations.applications.numbersender;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import socketsOperations.communicators.servers.EchoServer;
 import socketsOperations.executors.ServerExecutor;
 import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.KeyboardHandler;

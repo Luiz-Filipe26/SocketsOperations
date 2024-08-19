@@ -1,4 +1,4 @@
-package socketsOperations.communicators.clients;
+package socketsOperations.applications.numbersender;
 
 import java.util.*;
 import java.util.function.*;

@@ -9,7 +9,6 @@ public class ClientsRegistry {
     
     public static void registryClientChannel(String name, RequestHandler requestHandler) {
         clients.put(name, requestHandler);
-        ConsoleOutput.println(name + "registrado!");
         messagesOfClients.computeIfAbsent(name, list -> new ArrayList<>());
     }
     

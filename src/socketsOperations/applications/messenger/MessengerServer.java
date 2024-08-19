@@ -1,10 +1,10 @@
-package socketsOperations.communicators.servers;
+package socketsOperations.applications.messenger;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.function.*;
-import socketsOperations.utils.ClientsRegistry;
 
+import socketsOperations.utils.ClientsRegistry;
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.RequestHandler;
@@ -46,6 +46,7 @@ public class MessengerServer implements Consumer<RequestHandler> {
     private void registerClient(String clientName) {
         this.currentClient = clientName;
         ClientsRegistry.registryClientChannel(clientName, requestHandler);
+        ConsoleOutput.println("Cliente registrado: " + clientName);
     }
 
     private void handleRequestError(String requestContent) {
@@ -67,9 +68,10 @@ public class MessengerServer implements Consumer<RequestHandler> {
             success = requestChannel.sendRequestAndWaitAnswer(requestData.requestType(), requestData.requestContent());
         } catch (IOException ex) {
             ConsoleOutput.println("Erro ao enviar mensagem ao cliente: " + ex.getMessage());
+            return;
         }
         
-        if(success == null || !success.requestContent().equals(CommunicationConstants.SUCCESS)) {
+        if(success == null || !success.requestType().equals(CommunicationConstants.SUCCESS)) {
             ConsoleOutput.println("Erro ao mandar mensagem: " + requestData.requestContent());
             return;
         }

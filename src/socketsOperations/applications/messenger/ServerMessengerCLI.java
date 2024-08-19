@@ -1,9 +1,8 @@
-package socketsOperations.clis;
+package socketsOperations.applications.messenger;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import socketsOperations.communicators.servers.MessengerServer;
 import socketsOperations.executors.ServerExecutor;
 import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.KeyboardHandler;
@@ -98,7 +97,7 @@ public class ServerMessengerCLI {
         lockOutput();
         KeyboardHandler keyboardHandler = KeyboardHandler.getInstance();
 
-        int port = keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta inválida!\n");
+        int port = 50;//keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta inválida!\n");
 
         var messengerServer = new MessengerServer();
         ServerExecutor serverRunner = new ServerExecutor(port, messengerServer);

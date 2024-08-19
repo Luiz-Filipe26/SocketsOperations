@@ -1,6 +1,5 @@
-package socketsOperations.clis;
+package socketsOperations.applications.numbersender;
 
-import socketsOperations.communicators.clients.RandomNumberSender;
 import socketsOperations.executors.ClientExecutor;
 import socketsOperations.utils.ConsoleOutput;
 import socketsOperations.utils.KeyboardHandler;

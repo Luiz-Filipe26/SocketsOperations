@@ -9,5 +9,5 @@ public class CommunicationConstants {
 		SUCCESS = "ok",
 		LISTEND = "listend",
 		BADREQUEST = "badreq",
-                REGISTER_CLIENT = "regcli";
+        REGISTER_CLIENT = "regcli";
 }
