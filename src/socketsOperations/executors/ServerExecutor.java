@@ -38,38 +38,37 @@ public class ServerExecutor {
     public int getPort() {
         return port;
     }
-    
+
     private void runServer() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-        	
+
             ConsoleOutput.println("Servidor ouvindo na porta " + port);
-            
+
             serverLoop(serverSocket);
-            
+
         } catch (Exception e) {
             ConsoleOutput.println("Erro ao iniciar o servidor: " + e.getMessage());
         }
     }
-    
+
     private void serverLoop(ServerSocket serverSocket) {
-    	while (!Thread.currentThread().isInterrupted()) {
-    		try {
-    			Socket clientSocket = serverSocket.accept();
-    			new Thread(() -> processNewServer(clientSocket)).start();
-    		} catch (Exception e) {
-    			ConsoleOutput.println("Erro ao aceitar conexão: " + e.getMessage());
-    		}
-    	}    	
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                Socket clientSocket = serverSocket.accept();
+                new Thread(() -> processNewServer(clientSocket)).start();
+            } catch (Exception e) {
+                ConsoleOutput.println("Erro ao aceitar conexão: " + e.getMessage());
+            }
+        }
     }
 
     private void processNewServer(Socket clientSocket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-        	
-        	var requestHandler = new RequestHandler(in, out);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+
+            var requestHandler = new RequestHandler(in, out);
             requestProcessor.accept(requestHandler);
             requestHandler.sendRequest(CommunicationConstants.SUCCESS, "Servidor criado com sucesso!");
-            
+
         } catch (IOException e) {
             ConsoleOutput.println("Erro ao processar a conexão do cliente: " + e.getMessage());
         }

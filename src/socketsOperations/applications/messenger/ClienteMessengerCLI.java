@@ -24,8 +24,8 @@ public class ClienteMessengerCLI {
         MessengerClient client = new MessengerClient();    
         
         name = keyboardHandler.getInput(input -> !input.isBlank(), "Por favor, digite o nome: ", "[!] Nome invalido!\n");
-        ip = "localhost";//keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP invalido\n");
-        port = 50;//keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta invalida!\n");
+        ip = keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP invalido\n");
+        port = keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta invalida!\n");
         
         ClientExecutor.runClient(ip, port, client);      
         try {
