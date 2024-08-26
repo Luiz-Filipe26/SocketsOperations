@@ -27,7 +27,7 @@ public class ClienteMessengerCLI {
         ip = keyboardHandler.getInput(input -> input.matches(IP_REGEX), "Por favor, digite o IP: ", "[!] IP invalido\n");
         port = keyboardHandler.getIntInput(input -> input >= 0 && input < 65535, "Por favor, digite a porta: ", "[!] Porta invalida!\n");
         
-        ClientExecutor.runClient(ip, port, client);      
+        ClientExecutor.runClient(ip, port, client);
         try {
             Thread.sleep(2000);
         } catch (InterruptedException ex) {
