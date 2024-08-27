@@ -1,4 +1,4 @@
-package p2pmessenger;
+package socketsOperations.applications.p2pmessenger;
 
 import java.net.*;
 

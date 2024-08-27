@@ -3,7 +3,7 @@ package socketsOperations.utils;
 public class CommunicationConstants {
 
     public static final String
-    		LISTANSWER = "listans",
+            LISTANSWER = "listans",
             LISTREQUEST = "listreq",
             MESSAGE = "msg",
             ERROR = "nok",
