@@ -16,6 +16,8 @@ public class MessengerNodeServer implements Consumer<RequestHandler> {
 
         try {
             RequestData request = requestHandler.receiveRequest();
+            
+            ConsoleOutput.println("Mensagem recebida: " + request.requestContent());
 
             if(request.requestType().equals(CommunicationConstants.CONNECTION_CLOSED)) {
                 return;

@@ -22,6 +22,8 @@ public class MessengerNodeClient implements Consumer<RequestHandler> {
     public void accept(RequestHandler requestHandler) {
         try {
             RequestData requestData = requestHandler.sendRequestAndWaitAnswer(CommunicationConstants.MESSAGE, message);
+            ConsoleOutput.println("Mensagem enviada: " + message);
+            ConsoleOutput.println("Resposta do servidor: " + requestData.requestContent());
             handleServerMessages(requestData);
         } catch (IOException ex) {
             Logger.getLogger(MessengerNodeClient.class.getName()).log(Level.SEVERE, null, ex);
