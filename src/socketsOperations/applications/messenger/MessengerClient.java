@@ -1,12 +1,12 @@
 package socketsOperations.applications.messenger;
 
-import java.io.*;
-import java.util.function.*;
+import java.io.IOException;
+import java.util.function.Consumer;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
-import socketsOperations.utils.RequestHandler.RequestData;
 
 public class MessengerClient implements Consumer<RequestHandler> {
 
@@ -33,7 +33,8 @@ public class MessengerClient implements Consumer<RequestHandler> {
     }
     
     public void registryClient(String name) {
-        requestHandler.sendRequest(CommunicationConstants.REGISTER_CLIENT, name);
+    	var request = new RequestData(CommunicationConstants.REGISTER_CLIENT, name);
+        requestHandler.sendRequest(request);
     }
 
     @Override
@@ -44,14 +45,16 @@ public class MessengerClient implements Consumer<RequestHandler> {
         
         while (!stop) {
             if (message != null && !message.isBlank()) {
-                requestHandler.sendRequest(CommunicationConstants.MESSAGE, recipient + ":" + message);
+            	var request = new RequestData(CommunicationConstants.MESSAGE, recipient + ":" + message);
+                requestHandler.sendRequest(request);
                 message = "";
                 recipient = "";
             }
             if (listAllMessages) {
                 listAllMessages = false;
                 try {
-                    RequestData answer = requestHandler.sendRequestAndWaitAnswer(CommunicationConstants.LISTREQUEST, "Please, list messages");
+                	var request = new RequestData(CommunicationConstants.LISTREQUEST, "Please, list messages");
+                    RequestData answer = requestHandler.sendRequestAndWaitAnswer(request);
                     switch (answer.requestType()) {
                         case CommunicationConstants.ERROR ->
                             ConsoleOutput.println("Erro: " + answer.requestContent());
@@ -86,7 +89,8 @@ public class MessengerClient implements Consumer<RequestHandler> {
             switch (requestData.requestType()) {
                 case CommunicationConstants.MESSAGE -> {
                     ConsoleOutput.println("Mensagem recebida pelo servidor: " + requestData.requestContent());
-                    requestHandler.sendRequest(CommunicationConstants.SUCCESS, "mensagem recebida!");
+                    var request = new RequestData(CommunicationConstants.SUCCESS, "mensagem recebida!");
+                    requestHandler.sendRequest(request);
                 }
                 case CommunicationConstants.ERROR ->
                     handleRequestError(requestData.requestContent());
@@ -107,7 +111,8 @@ public class MessengerClient implements Consumer<RequestHandler> {
     }
 
     private void unknownRequest(String requestType) {
-        requestHandler.sendRequest(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+    	var request = new RequestData(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+        requestHandler.sendRequest(request);
     }
 
     private void finishWaiting() {

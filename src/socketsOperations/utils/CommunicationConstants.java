@@ -3,6 +3,7 @@ package socketsOperations.utils;
 public class CommunicationConstants {
 
     public static final String
+			TYPEANDCONTENTSEPARATOR = "| ",
             LISTANSWER = "listans",
             LISTREQUEST = "listreq",
             MESSAGE = "msg",

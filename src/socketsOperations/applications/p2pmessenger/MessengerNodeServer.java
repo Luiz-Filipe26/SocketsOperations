@@ -1,12 +1,12 @@
 package socketsOperations.applications.p2pmessenger;
 
 import java.io.IOException;
-import java.util.function.*;
+import java.util.function.Consumer;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
-import socketsOperations.utils.RequestHandler.RequestData;
 
 public class MessengerNodeServer implements Consumer<RequestHandler> {
 
@@ -41,13 +41,15 @@ public class MessengerNodeServer implements Consumer<RequestHandler> {
     }
 
     private void unknownRequest(String requestType, RequestHandler requestHandler) {
-        requestHandler.sendRequest(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+    	var request = new RequestData(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+        requestHandler.sendRequest(request);
     }
 
     private void receiveMessage(RequestData requestData, RequestHandler requestHandler) {
         String message = requestData.requestContent();
 
         ConsoleOutput.println("Mensagem recebida: " + message);
-        requestHandler.sendRequest(CommunicationConstants.SUCCESS, " recebido a mensagem!");
+    	var request = new RequestData(CommunicationConstants.SUCCESS, " recebido a mensagem!");
+        requestHandler.sendRequest(request);
     }
 }

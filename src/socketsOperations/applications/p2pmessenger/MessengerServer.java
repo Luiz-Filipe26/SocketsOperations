@@ -1,13 +1,13 @@
 package socketsOperations.applications.p2pmessenger;
 
 import java.io.IOException;
-import java.util.function.*;
+import java.util.function.Consumer;
 
 import socketsOperations.applications.p2pmessenger.NodesRegistry.NodeInfo;
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
-import socketsOperations.utils.RequestHandler.RequestData;
 
 public class MessengerServer implements Consumer<RequestHandler> {
 
@@ -20,6 +20,8 @@ public class MessengerServer implements Consumer<RequestHandler> {
         try {
             RequestData request = requestHandler.receiveRequest();
 
+            System.out.println("Recebido a requisição: " + request);
+            
             switch (request.requestType()) {
 
                 case CommunicationConstants.ERROR ->
@@ -40,8 +42,9 @@ public class MessengerServer implements Consumer<RequestHandler> {
     private void retrieveNode(String name) {
         NodeInfo nodeInfo = NodesRegistry.getNodeInfo(name);
         String answer = nodeInfo.IP() + "-" + nodeInfo.port();
-
-        requestHandler.sendRequest(CommunicationConstants.NODE_INFO_ANSWER, answer);
+        
+        var request = new RequestData(CommunicationConstants.NODE_INFO_ANSWER, answer);
+        requestHandler.sendRequest(request);
     }
 
     private void registerNode(String nodeInfo) {
@@ -58,6 +61,7 @@ public class MessengerServer implements Consumer<RequestHandler> {
     }
 
     private void unknownRequest(String requestType) {
-        requestHandler.sendRequest(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+    	var request = new RequestData(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+        requestHandler.sendRequest(request);
     }
 }

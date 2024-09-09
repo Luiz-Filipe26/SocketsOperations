@@ -1,10 +1,10 @@
 package socketsOperations.applications.numbersender;
 
-import java.util.function.*;
+import java.util.function.Consumer;
 
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
-import socketsOperations.utils.RequestHandler.RequestData;
 
 public class EchoServer implements Consumer<RequestHandler> {
 

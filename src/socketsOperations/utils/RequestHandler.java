@@ -1,189 +1,99 @@
 package socketsOperations.utils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.regex.Pattern;
 
 public class RequestHandler {
 
-    private final BufferedReader socketReader;
-    private final PrintWriter socketWriter;
-    private volatile boolean waitingAnswer = false;
-    private volatile boolean waitLineConsumption = false;
-    private final Object waitingRequestLock = new Object();
-    private final Object waitingAnswerLock = new Object();
-    private final Object waitingFinishSocketConsumption = new Object();
-    private String currentSocketLine;
+	private final PrintWriter socketWriter;
+	private final SocketLineReader socketLineReader;
+	private static final int ANSWER_PRIORITY = 1;
+	private static final int GENERAL_REQUEST_PRIORITY = 2;
 
-    public record RequestData(String requestType, String requestContent) {
-
-    }
-
-    public RequestHandler(BufferedReader socketReader, PrintWriter socketWriter) {
-        this.socketReader = socketReader;
-        this.socketWriter = socketWriter;
-        Thread socketLineReader = new Thread(getSocketLineReader());
-        socketLineReader.start();
-    }
-    
-	private Runnable getSocketLineReader() {
-		return () -> {
-			while(true) {
-				try {
-					if(waitLineConsumption) {
-						synchronized (waitingFinishSocketConsumption) {
-							waitingFinishSocketConsumption.wait();
-						}
-					}
-					
-					currentSocketLine = socketReader.readLine();
-					if (waitingAnswer) {
-						synchronized (waitingAnswerLock) {
-							waitingAnswerLock.notifyAll();
-						}
-					} else {
-						synchronized (waitingRequestLock) {
-							waitingRequestLock.notifyAll();
-						}
-					}
-	
-				} catch (IOException e) {
-					ConsoleOutput.println("Fechou a conexão");
-				    synchronized (waitingRequestLock) {
-				        waitingRequestLock.notifyAll();
-				    }
-				    synchronized (waitingAnswerLock) {
-				        waitingAnswerLock.notifyAll();
-				    }
-					return;
-				} catch (InterruptedException e) {
-					ConsoleOutput.println("Erro ao esperar consumir linha" + e.getMessage());
-				    synchronized (waitingRequestLock) {
-				        waitingRequestLock.notifyAll();
-				    }
-				    synchronized (waitingAnswerLock) {
-				        waitingAnswerLock.notifyAll();
-				    }
-					return;
-				}
-			}
-		};
+	public RequestHandler(BufferedReader socketReader, PrintWriter socketWriter) {
+		this.socketWriter = socketWriter;
+		this.socketLineReader = new SocketLineReader(socketReader);
+		Thread socketLineReaderThread = new Thread(socketLineReader);
+		socketLineReaderThread.start();
 	}
 
-    public RequestData receiveRequest() throws IOException {
-    	
-    	if(currentSocketLine == null || waitingAnswer) {
-    		try {
-    			synchronized (waitingRequestLock) {
-    				waitingRequestLock.wait();
-				}
-			} catch (InterruptedException e) {
-				ConsoleOutput.println("Erro ao esperar request: " + e.getMessage());
-			}
-    	}
-    	
-    	String line = currentSocketLine;
-    	currentSocketLine = null;
+	public RequestData receiveRequest() throws IOException {
+		String line = socketLineReader.getLine(GENERAL_REQUEST_PRIORITY);
 
-
-		ConsoleOutput.println("A resposta do receiveRequest:" + line);
+		String[] responseParts = line.split(Pattern.quote(CommunicationConstants.TYPEANDCONTENTSEPARATOR), 2);
+		String requestType = responseParts[0];
+		String requestContent = responseParts.length > 1 ? responseParts[1] : "";
 		
-		if (line == null) {
+		System.out.println("Request recebida: " + requestType + "-" + requestContent);
+
+		return new RequestData(requestType, requestContent);
+	}
+
+	public RequestData sendRequestAndWaitAnswer(RequestData requestData) throws IOException {
+		sendRequest(requestData);
+
+		Object answerLock = new Object();
+		String answer = socketLineReader.getLine(answerLock, ANSWER_PRIORITY);
+
+		if (answer == null) {
 			return new RequestData(CommunicationConstants.CONNECTION_CLOSED, "Conexão fechada");
 		}
 
-		String[] responseParts = line.split("\\| ", 2);
-		String requestType = responseParts[0];
-		String requestContent = responseParts.length > 1 ? responseParts[1] : "";
+		String[] responseParts = answer.split(Pattern.quote(CommunicationConstants.TYPEANDCONTENTSEPARATOR), 2);
+		String responseType = responseParts[0];
+		String responseContent = responseParts.length > 1 ? responseParts[1] : "";
 
+		return handleResponseByType(new RequestData(responseType, responseContent), answerLock);
+	}
 
-        return new RequestData(requestType, requestContent);
-    }
+	public void sendRequest(RequestData requestData) {
+		System.out.println("Request enviada: " + requestData);
+		socketWriter.println(requestData.requestType() + CommunicationConstants.TYPEANDCONTENTSEPARATOR + requestData.requestContent());
+		socketWriter.flush();
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
 
-    public RequestData sendRequestAndWaitAnswer(String requestType, String requestContent) throws IOException {
-        waitingAnswer = true;
-        sendRequest(requestType, requestContent);
-        return receiveAnswer();
-    }
+	private RequestData handleResponseByType(RequestData initialResponse, Object answerLock) throws IOException {
+		String answer;
 
-    public void sendRequest(String requestType, String requestContent) {
-        socketWriter.println(requestType + "| " + requestContent);
-    }
+		ConsoleOutput.println("Resposta inicial: " + initialResponse.requestType() + "---" + initialResponse.requestContent());
 
-    public RequestData receiveAnswer() throws IOException {
-        waitReceiveAnswer();
+		answer = switch (initialResponse.requestType()) {
+			case CommunicationConstants.LISTANSWER ->
+				handleListRequestResponse(initialResponse, answerLock);
+			default ->
+				handleDefaultResponse(initialResponse);
+		};
 
-        String answer = currentSocketLine;
-        currentSocketLine = null;
+		socketLineReader.signalFinishedReading(answerLock);
 
-        if (answer == null) {
-            return new RequestData(CommunicationConstants.CONNECTION_CLOSED, "Conexão fechada");
-        }
+		return new RequestData(initialResponse.requestType(), answer);
+	}
 
-        String[] responseParts = answer.split("\\| ", 2);
-        String requestType = responseParts[0];
-        String requestContent = responseParts.length > 1 ? responseParts[1] : "";
+	private String handleListRequestResponse(RequestData initialResponse, Object answerLock) throws IOException {
+		StringBuilder listResponse = new StringBuilder(initialResponse.requestContent()).append("\n");
 
-        return handleResponseByType(requestType, requestContent);
-    }
+		String response;
 
-    private void waitReceiveAnswer() {
-        waitingAnswer = true;
-        synchronized (waitingAnswerLock) {
-            try {
-                waitingAnswerLock.wait();
-            } catch (InterruptedException e) {
-                ConsoleOutput.println("Erro ao esperar resposta: " + e.getMessage());
-            }
-        }
-    }
-
-    private RequestData handleResponseByType(String requestType, String initialResponse) throws IOException {
-        String answer;
-
-        ConsoleOutput.println(requestType + "---" + initialResponse);
-        
-        waitLineConsumption = true;
-        
-        try {
-            answer = switch (requestType) {
-                case CommunicationConstants.LISTANSWER ->
-                    handleListRequestResponse(initialResponse);
-                default ->
-                    handleDefaultResponse(initialResponse);
-            };
-        } catch (IOException e) {
-            answer = e.getMessage();
-            requestType = CommunicationConstants.ERROR;
-        }
-        
-        waitLineConsumption = false;
-        
-        synchronized (waitingFinishSocketConsumption) {
-        	waitingFinishSocketConsumption.notifyAll();
+		while (true) {
+			response = socketLineReader.getLine(answerLock, ANSWER_PRIORITY);
+			if (response.startsWith(CommunicationConstants.CONNECTION_CLOSED)
+					|| response.startsWith(CommunicationConstants.LISTEND)) {
+				break;
+			}
+			listResponse.append(response).append("\n");
 		}
 
-        waitingAnswer = false;
+		return listResponse.toString();
+	}
 
-        return new RequestData(requestType, answer);
-    }
-
-    private String handleListRequestResponse(String initialResponse) throws IOException {
-        StringBuilder listResponse = new StringBuilder(initialResponse).append("\n");
-
-        String response;
-
-        while (true) {
-            waitReceiveAnswer();
-            response = currentSocketLine;
-            currentSocketLine = null;
-            listResponse.append(response).append("\n");
-            if (response.startsWith(CommunicationConstants.LISTEND + "| ")) {
-                break;
-            }
-        }
-        return listResponse.toString();
-    }
-
-    private String handleDefaultResponse(String initialResponse) {
-        return initialResponse;
-    }
+	private String handleDefaultResponse(RequestData initialResponse) {
+		return initialResponse.requestContent();
+	}
 }

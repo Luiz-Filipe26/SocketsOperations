@@ -1,13 +1,13 @@
 package socketsOperations.applications.messenger;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.function.*;
+import java.util.List;
+import java.util.function.Consumer;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
-import socketsOperations.utils.RequestHandler.RequestData;
 
 public class MessengerServer implements Consumer<RequestHandler> {
 
@@ -53,7 +53,8 @@ public class MessengerServer implements Consumer<RequestHandler> {
     }
 
     private void unknownRequest(String requestType) {
-        requestHandler.sendRequest(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+    	var request = new RequestData(CommunicationConstants.BADREQUEST, "Unknown request type: " + requestType);
+        requestHandler.sendRequest(request);
     }
 
     private void receiveMessage(RequestData requestData) {
@@ -64,7 +65,8 @@ public class MessengerServer implements Consumer<RequestHandler> {
         RequestHandler requestChannel = ClientsRegistry.getClientChannel(client);
         RequestData success = null;
         try {
-            success = requestChannel.sendRequestAndWaitAnswer(requestData.requestType(), requestData.requestContent());
+        	var request = new RequestData(requestData.requestType(), requestData.requestContent());
+            success = requestChannel.sendRequestAndWaitAnswer(request);
         } catch (IOException ex) {
             ConsoleOutput.println("Erro ao enviar mensagem ao cliente: " + ex.getMessage());
             return;
@@ -83,14 +85,17 @@ public class MessengerServer implements Consumer<RequestHandler> {
     private void sendAllMessages() {
         
         List<String> messages = ClientsRegistry.getMessagesOfClient(currentClient);
-
-        requestHandler.sendRequest(CommunicationConstants.LISTANSWER, "Lista de todas as mensagens:");
+        
+        var request = new RequestData(CommunicationConstants.LISTANSWER, "Lista de todas as mensagens:");
+        requestHandler.sendRequest(request);
         StringBuilder completeList = new StringBuilder(50 * messages.size());
 
         for (String message : messages) {
             completeList.append(message).append("\n");
         }
-        requestHandler.sendRequest("", completeList.toString());
-        requestHandler.sendRequest(CommunicationConstants.LISTEND, "Fim da lista.");
+        request = new RequestData("", completeList.toString());
+        requestHandler.sendRequest(request);
+        request = new RequestData(CommunicationConstants.LISTEND, "Fim da lista.");
+        requestHandler.sendRequest(request);
     }
 }

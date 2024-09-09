@@ -1,14 +1,14 @@
 package socketsOperations.applications.p2pmessenger;
 
-import java.io.*;
-import java.util.function.*;
+import java.io.IOException;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
-import socketsOperations.utils.RequestHandler.RequestData;
 
 public class MessengerNodeClient implements Consumer<RequestHandler> {
 
@@ -21,25 +21,26 @@ public class MessengerNodeClient implements Consumer<RequestHandler> {
     @Override
     public void accept(RequestHandler requestHandler) {
         try {
-            RequestData requestData = requestHandler.sendRequestAndWaitAnswer(CommunicationConstants.MESSAGE, message);
+        	var request = new RequestData(CommunicationConstants.MESSAGE, message);
+            RequestData answer = requestHandler.sendRequestAndWaitAnswer(request);
             ConsoleOutput.println("Mensagem enviada: " + message);
-            ConsoleOutput.println("Resposta do servidor: " + requestData.requestContent());
-            handleServerMessages(requestData);
+            ConsoleOutput.println("Resposta do servidor: " + answer.requestContent());
+            handleServerMessages(answer);
         } catch (IOException ex) {
             Logger.getLogger(MessengerNodeClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private void handleServerMessages(RequestData requestData) {
-        switch (requestData.requestType()) {
+    private void handleServerMessages(RequestData answer) {
+        switch (answer.requestType()) {
             case CommunicationConstants.ERROR ->
-                handleRequestError(requestData.requestContent());
+                handleRequestError(answer.requestContent());
             case CommunicationConstants.SUCCESS ->
-                handleRequestSuccess(requestData.requestContent());
+                handleRequestSuccess(answer.requestContent());
             case CommunicationConstants.NODE_INFO_ANSWER ->
                 ConsoleOutput.print("Nó registrado!!!");
             default ->
-                unknownRequest(requestData.requestContent());
+                unknownRequest(answer.requestContent());
         }
     }
 

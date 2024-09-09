@@ -1,10 +1,11 @@
 package socketsOperations.applications.numbersender;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Random;
+import java.util.function.Consumer;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
 
 public class RandomNumberSender implements Consumer<RequestHandler> {
@@ -21,7 +22,8 @@ public class RandomNumberSender implements Consumer<RequestHandler> {
         for (int i = 0; i < numberOfRandomNumbers; i++) {
             int randomNumber = random.nextInt(100);
             String message = "oi from " + randomNumber;
-            requestHandler.sendRequest(CommunicationConstants.MESSAGE, message);
+            var request = new RequestData(CommunicationConstants.MESSAGE, message);
+            requestHandler.sendRequest(request);
             ConsoleOutput.println("Enviado: " + message);
         }
     }

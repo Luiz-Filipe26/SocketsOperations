@@ -1,11 +1,16 @@
 package socketsOperations.executors;
 
-import java.io.*;
-import java.net.*;
-import java.util.function.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.function.Consumer;
 
 import socketsOperations.utils.CommunicationConstants;
 import socketsOperations.utils.ConsoleOutput;
+import socketsOperations.utils.RequestData;
 import socketsOperations.utils.RequestHandler;
 
 public class ServerExecutor {
@@ -67,8 +72,7 @@ public class ServerExecutor {
 
             var requestHandler = new RequestHandler(in, out);
             requestProcessor.accept(requestHandler);
-            requestHandler.sendRequest(CommunicationConstants.SUCCESS, "Servidor criado com sucesso!");
-
+            
         } catch (IOException e) {
             ConsoleOutput.println("Erro ao processar a conexão do cliente: " + e.getMessage());
         }
